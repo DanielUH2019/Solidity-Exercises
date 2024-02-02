@@ -13,5 +13,12 @@ contract Fibonacci {
 
     function fibonacci(uint256 _position) public view returns (uint256) {
         // your code here
+        if (_position == 0) {
+            return 0;
+        } else if (_position == 1) {
+            return 1;
+        } else {
+            return fibonacci(_position - 1) + fibonacci(_position - 2);
+        }
     }
 }
