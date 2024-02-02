@@ -12,16 +12,25 @@ contract OneWeekLockup {
      * - withdrawEther(uint256 )
      * - balanceOf(address )
      */
+    mapping(address => uint256) public balances;
+    mapping(address => uint256) public lastDepositTime;
 
     function balanceOf(address user) public view returns (uint256) {
         // return the user's balance in the contract
+        return balances[user];
     }
 
     function depositEther() external payable {
         /// add code here
+        balances[msg.sender] += msg.value;
+        lastDepositTime[msg.sender] = block.timestamp;
     }
 
     function withdrawEther(uint256 amount) external {
         /// add code here
+        require(block.timestamp >= lastDepositTime[msg.sender] + 1 weeks, "You can only withdraw after a week");
+        require(balances[msg.sender] >= amount, "Not enough funds");
+        (bool sent, ) = msg.sender.call{value: amount}("");
+        require(sent, "Failed to withdraw Ether");
     }
 }

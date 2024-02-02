@@ -9,6 +9,8 @@ contract TimelockEscrow {
      * A buyer deposits ether into a contract, and the seller cannot withdraw it until 3 days passes. Before that, the buyer can take it back
      * Assume the owner is the seller
      */
+    mapping(address => uint256) public buyersEscrowedAmount;
+    mapping(address => uint256) public escrowEndTime;
 
     constructor() {
         seller = msg.sender;
@@ -21,6 +23,10 @@ contract TimelockEscrow {
      */
     function createBuyOrder() external payable {
         // your code here
+        require(escrowEndTime[msg.sender] == 0 || escrowEndTime[msg.sender] < block.timestamp, "Last escrow hasn't been withdrawn");
+        buyersEscrowedAmount[msg.sender] = msg.value;
+        escrowEndTime[msg.sender] = block.timestamp + 3 days;
+
     }
 
     /**
@@ -28,6 +34,11 @@ contract TimelockEscrow {
      */
     function sellerWithdraw(address buyer) external {
         // your code here
+        require(msg.sender == seller, "You are not the seller");
+        require(escrowEndTime[buyer] < block.timestamp, "Escrow time hasn't passed");
+        (bool sent, ) = seller.call{value: buyersEscrowedAmount[buyer]}("");
+        require(sent, "Failed to send Ether");
+
     }
 
     /**
@@ -35,10 +46,16 @@ contract TimelockEscrow {
      */
     function buyerWithdraw() external {
         // your code here
+        require(escrowEndTime[msg.sender] > block.timestamp, "Escrow time has passed");
+        (bool sent, ) = msg.sender.call{value: buyersEscrowedAmount[msg.sender]}("");
+        require(sent, "Failed to withdraw Ether");
+        buyersEscrowedAmount[msg.sender] = 0;
+
     }
 
     // returns the escrowed amount of @param buyer
     function buyerDeposit(address buyer) external view returns (uint256) {
         // your code here
+        return buyersEscrowedAmount[buyer];
     }
 }
